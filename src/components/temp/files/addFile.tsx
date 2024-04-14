@@ -18,7 +18,7 @@ import { IoIosArrowRoundBack, IoIosClose } from "react-icons/io";
 
 const UploadZone = () => {
   return (
-    <Dropzone onDrop={(acceptedFiles) => console.log(acceptedFiles)}>
+    <Dropzone onDrop={(acceptedFiles) => console.log(typeof acceptedFiles)}>
       {({ getRootProps, getInputProps }) => (
         <div
           {...getRootProps()}

@@ -6,6 +6,7 @@ import Header from "./components/common/header.tsx";
 import Sidebar, { SidebarItem } from "./components/common/leftMenu.tsx";
 import { IoAddCircle } from "react-icons/io5";
 import { useExpanded } from "./contexts/sidebar.tsx";
+import { AuthProvider } from "./contexts/useAuth.tsx";
 const Loading = () => (
   <div className="w-screen h-screen flex justify-center items-center bg-black">
     <div className="w-96 h-96 flex justify-center items-center bg-white shadow-lg shadow-gray-600">
@@ -37,7 +38,9 @@ const App = () => {
         className="overflow-x-hidden"
         style={{ marginLeft: expanded ? "13.3rem" : "3.6rem" }}
       >
+        <AuthProvider>
         <RouterProvider router={router} fallbackElement={<Loading />} />
+        </AuthProvider>
       </div>
     </div>
   );

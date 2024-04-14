@@ -1,81 +1,116 @@
-import React, { useRef, useState } from "react"; // Import from your firebase.js (also in TypeScript)
-import { UploadTaskSnapshot } from "@firebase/storage"; // Import for type safety
+import React, { useRef, useState } from "react";
+import { getDownloadURL } from "@firebase/storage";
 import { storage } from "@/services/firebase";
 import { ref, uploadBytesResumable } from "firebase/storage";
-interface File {
+import { ROOT_FOLDER } from "@/contexts/useFolder";
+import { v4 as uuidv4 } from 'uuid';
+import { useAuth } from "@/contexts/useAuth";
+import { Timestamp, where, query, getDocs } from "firebase/firestore";
+import { db } from "@/services/firebase"; // Assuming you have a firebase.js file that exports the Firestore instance
+import { collection, addDoc, updateDoc, doc } from "firebase/firestore";
+
+interface UploadFile {
+  id: string;
   name: string;
+  progress: number;
+  error: boolean;
 }
 
-function FileUploader() {
-  //   const [selectedFile, setSelectedFile] = useState<any>(null);
-  const [selectedFiles, setSelectedFiles] = useState<any>([]);
+interface FileUploaderProps {
+  currentFolder: any;
+}
+
+const FileUploader: React.FC<FileUploaderProps> = ({ currentFolder }) => {
+  const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
+  const [uploadingFiles, setUploadingFiles] = useState<UploadFile[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { currentUser } = useAuth();
 
   const handleClick = () => {
-    fileInputRef.current.click();
+    fileInputRef.current?.click();
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
       setSelectedFiles(event.target.files);
-    } else {
-      console.log("else");
     }
   };
-  //   const handleFileChange = (event: any) => {
-  //     const file = event.target.files[0];
-  //     const reader = new FileReader();
-  //     reader.onload = () => {
-  //       const arrayBuffer = reader.result;
-  //       setSelectedFile(arrayBuffer);
-  //     };
-  //     reader.readAsArrayBuffer(file);
-  //   };
 
   const handleUpload = async () => {
-    if (!selectedFiles.length) return; // Check if a file is selected
-    setUploading(true);
-    setUploadProgress(0);
+    if (!selectedFiles) return; // Check if a file is selected
 
-    // Generate a unique filename to prevent overwriting
+    setUploading(true);
 
     try {
       for (const file of selectedFiles) {
-        // Generate a unique filename to prevent overwriting
-        const filename = `${file.name.split(".")[0]}-${Date.now()}-${
-          file.name.split(".")[1]
-        }`;
-        const storageRef = ref(storage, `uploads/${filename}`);
+        const id = uuidv4();
+        setUploadingFiles(prevUploadingFiles => [
+          ...prevUploadingFiles,
+          { id, name: file.name, progress: 0, error: false },
+        ]);
 
-        const uploadTask = uploadBytesResumable(storageRef, file); // Use put for simpler uploads
+        const filePath = currentFolder === ROOT_FOLDER
+          ? `${currentFolder.path.join("/")}/${file.name}`
+          : `${currentFolder.path.join("/")}/${currentFolder.name}/${file.name}`;
 
-        // Track upload progress
+        const storageRef = ref(storage, `uploads/${currentUser.uid}/${filePath}`);
+        const uploadTask = uploadBytesResumable(storageRef, file);
+
         uploadTask.on(
           "state_changed",
-          (snapshot: UploadTaskSnapshot) => {
-            const progress = Math.round(
-              (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+          (snapshot) => {
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            setUploadingFiles(prevUploadingFiles =>
+              prevUploadingFiles.map(uploadFile =>
+                uploadFile.id === id ? { ...uploadFile, progress } : uploadFile
+              )
             );
-            setUploadProgress(progress);
           },
-          (error: any) => {
-            console.error(error);
+          (error:any) => {
+            setUploadingFiles(prevUploadingFiles =>
+              prevUploadingFiles.map(uploadFile =>
+                uploadFile.id === id ? { ...uploadFile, error: true } : uploadFile
+              )
+            );
           },
-          () => {
-            console.log("File uploaded successfully!");
+          async () => {
+            setUploadingFiles(prevUploadingFiles =>
+              prevUploadingFiles.filter(uploadFile => uploadFile.id !== id)
+            );
+
+            const url = await getDownloadURL(uploadTask.snapshot.ref);
+
+            const q = query(
+              collection(db, "files"),
+              where("name", "==", file.name),
+              where("userId", "==", currentUser.uid),
+              where("folderId", "==", currentFolder.id)
+            );
+
+            const existingFilesSnapshot = await getDocs(q);
+            const existingFile = existingFilesSnapshot.docs[0];
+
+            if (existingFile) {
+              const fileRef = doc(db, "files", existingFile.id);
+              await updateDoc(fileRef, { url });
+            } else {
+              await addDoc(collection(db, "files"), {
+                url,
+                name: file.name,
+                createdAt: Timestamp.now(),
+                folderId: currentFolder.id,
+                userId: currentUser.uid,
+              });
+            }
           }
         );
       }
-      setUploading(false);
     } catch (error) {
-      console.error(error);
-      setUploading(false); // Reset uploading state on error
+      console.error("Error uploading files:", error);
     } finally {
-      setSelectedFiles([]); // Clear selected files after upload
-      setUploading(false); // Reset uploading state even on error
+      setUploading(false);
     }
   };
 
@@ -98,11 +133,22 @@ function FileUploader() {
       >
         {uploading ? "Uploading..." : "Upload"}
       </button>
-      <div className="text-2xl">
-        {uploadProgress > 0 && <p>Upload Progress: {uploadProgress}%</p>}
-      </div>
+      {uploadingFiles.length > 0 && (
+        <div className="mt-2 p-3 border rounded-lg ">
+          {uploadingFiles.map(uploadFile => (
+            <div key={uploadFile.id} className="flex items-center space-x-3">
+              <p>{uploadFile.name}</p>
+              {uploadFile.error ? (
+                <p>Error</p>
+              ) : (
+                <progress value={uploadFile.progress} max="100" />
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
-}
+};
 
 export default FileUploader;
