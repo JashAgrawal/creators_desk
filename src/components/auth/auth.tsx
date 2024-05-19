@@ -4,15 +4,16 @@ import { FcGoogle } from "react-icons/fc";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { authenticateUser, GoogleSignIn } from "@/services/firebase";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { error } from "console";
+import { postAPi } from "@/api/apis";
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-
+  const navigate = useNavigate();
   const handleClick = async () => {
     if (!isLogin) {
       if (password !== confirmPassword) {
@@ -22,39 +23,48 @@ const Auth = () => {
     }
     try {
       const user = await authenticateUser(email, password, isLogin);
-      console.log(user);
+      await postAPi("/user", { email: user.email, uid: user.uid });
       toast((isLogin ? "Login" : "Signup") + " Success");
+      navigate("/");
     } catch (error: any) {
       const message = "" + error.message;
       const code = error;
-      console.log(code);
-      toast(message.split("auth/")[1].split(")")[0], {
-        description: message.split(":")[1],
-      });
+
+      if (("" + code).includes("auth/")) {
+        toast(message.split("auth/")[1].split(")")[0], {
+          description: message.split(":")[1],
+        });
+      } else {
+        toast("Something went wrong");
+      }
     }
   };
   const handleGoogle = async () => {
     try {
       const user = await GoogleSignIn();
-      console.log(user);
+      await postAPi("/user", { email: user.email, uid: user.uid });
       toast((isLogin ? "Login" : "Signup") + " Success");
+      navigate("/");
     } catch (error: any) {
       const message = "" + error.message;
       const code = error;
-      console.log(code);
-      toast(message.split("auth/")[1].split(")")[0], {
-        description: message.split(":")[1],
-      });
+      if (("" + code).includes("auth/")) {
+        toast(message.split("auth/")[1].split(")")[0], {
+          description: message.split(":")[1],
+        });
+      } else {
+        toast("Something went wrong");
+      }
     }
   };
 
   return (
-    <div className="w-full h-full relative flex flex-col justify-center items-center bg-black overflow-hidden">
+    <div className="w-screen h-screen relative flex flex-col justify-center items-center bg-black overflow-hidden">
       <img
         src={bg}
         className="w-full h-full absolute top-0 left-0 right-0 bottom-0 z-10 opacity-30 object-cover"
       />
-      <div className="w-1/3 p-6 bg-white rounded-md flex flex-col justify-center items-center space-y-4 shadow-lg z-20">
+      <div className="w-1/3 p-6 bg-white rounded-md flex flex-col justify-center items-center space-y-2 shadow-lg z-20">
         <h1 className="font-bold text-xl px-6 pb-2 border-b text-gray-600">
           {isLogin ? "Login" : "Signup"} to Creators Deck
         </h1>
@@ -74,14 +84,17 @@ const Auth = () => {
           placeholder="email@emsail.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          className="my-2"
         />
         <Input
           placeholder="password ..."
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          className="my-2"
         />
         {!isLogin && (
           <Input
+            className="my-2"
             placeholder="Retype Password ..."
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}

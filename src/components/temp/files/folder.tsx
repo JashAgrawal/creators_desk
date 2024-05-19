@@ -1,21 +1,18 @@
-import React from 'react'
-import { FaFolder } from 'react-icons/fa6'
+import React from "react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { FaFolder } from "react-icons/fa";
 
-const Folder = () => {
+export default function Folder({ folder }: { folder: any }) {
   return (
-    <div className='flex rounded-lg overflow-hidden'>
-       <div className='h-48 w-48'>
-        
-        </div> 
-    <div className='flex p-3 items-center space-x-3'>
-        <FaFolder/>
-        <p>My Folder</p>
-        <div>
-
-        </div>
-    </div>
-    </div>
-  )
+    <Link to={`/files/${folder.id}`}>
+      <Button
+        variant="outline"
+        className="text-truncate w-100 border-gray-400 bg-gray-200"
+      >
+        <FaFolder className="mr-2" />
+        {folder.name}
+      </Button>
+    </Link>
+  );
 }
-
-export default Folder

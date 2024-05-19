@@ -3,34 +3,28 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useOrg } from "@/contexts/org";
-import { useProject } from "@/contexts/project";
 import { useAuth } from "@/contexts/useAuth";
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
-const CreateProject = () => {
+const CreateOrg = () => {
   const [step, setStep] = React.useState(0);
   const [name, setName] = React.useState("");
   const { currentUser } = useAuth();
+  const { org, setOrg } = useOrg();
   const [description, setDescription] = React.useState("");
   const navigate = useNavigate();
-  const { org } = useOrg();
-  const { setProject } = useProject();
   const handleSubmit = async () => {
     try {
-      const project = await postAPi("/create-project", {
+      const res = await postAPi("/create-org", {
         name,
         description,
-        organizationId: org.id || "6622f79b38c774132019d87c",
         userId: currentUser?.uid,
       });
-      setProject({
-        id: project.data.project._id,
-        name: project.data.project.name,
-      });
-      toast("Project Created", {
-        description: "You can now add members to your project.",
+      setOrg({ id: res.data.org._id, name: res.data.org.name });
+      toast("Organization Created", {
+        description: "You can now add members to your organization.",
       });
       navigate("/");
     } catch (err) {
@@ -44,7 +38,7 @@ const CreateProject = () => {
         <div className="h-full flex flex-col space-y-4 justify-between items-center">
           <h1 className="text-7xl">
             Let's get started with your{" "}
-            <span className="font-medium">Project Name</span>
+            <span className="font-medium">Organization Name</span>
           </h1>
           <input
             value={name}
@@ -64,7 +58,7 @@ const CreateProject = () => {
       {step == 1 && (
         <div className="w-full h-full flex flex-col space-y-4 justify-between">
           <h1 className="text-4xl">
-            Tell us something more about your project
+            Tell us something more about
             <br />
             <span className="font-medium font-6xl"> {name}</span>
             <br />
@@ -94,4 +88,4 @@ const CreateProject = () => {
   );
 };
 
-export default CreateProject;
+export default CreateOrg;

@@ -27,6 +27,8 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import Sidebar, { SidebarItem } from "@/components/common/leftMenu";
+import { createInvite } from "@/api/apis";
+import { projId, projName } from "@/contexts/constants";
 const PeopleCard = ({
   name,
   email,
@@ -78,34 +80,57 @@ const PeoplesSection = ({
   </AccordionItem>
 );
 
-const CreateInviteLink = () => {
-  const [role, setRole] = useState("Editor");
-
+const CreateInviteLink = ({
+  role,
+  setRole,
+  email,
+  setEmail,
+}: {
+  role: string;
+  setRole: any;
+  email: string;
+  setEmail: any;
+}) => {
   return (
     <div className="flex flex-col space-y-2">
-      <Input type="email" placeholder="Email" />
+      <Input
+        type="email"
+        placeholder="Email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+      />
       <Select
-        defaultValue="Editor"
+        defaultValue={role}
         onValueChange={(value: any) => setRole(value)}
       >
         <SelectTrigger>
           <SelectValue placeholder="Select a role" />
         </SelectTrigger>
         <SelectContent>
-          {["Owner", "Editor", "Manager"].map((role, idx) => (
+          {["Admin", "Client", "Editor", "Manager"].map((role, idx) => (
             <SelectItem value={role} key={idx}>
               {role}
             </SelectItem>
           ))}
-          <SelectItem value="New">New Role</SelectItem>
         </SelectContent>
       </Select>
-      {role === "New" && <Input type="text" placeholder="New Role Name" />}
     </div>
   );
 };
 
 const People = () => {
+  const [role, setRole] = useState("Editor");
+  const [email, setEmail] = useState("");
+
+  const sendInvite = async () => {
+    const res = await createInvite({
+      email,
+      role,
+      entityName: projName,
+      projectId: projId,
+    });
+    console.log(res);
+  };
   return (
     <>
       <div className="w-full h-full flex flex-col space-y-6">
@@ -126,14 +151,19 @@ const People = () => {
                 </SheetDescription>
               </SheetHeader>
               <div>
-                <CreateInviteLink />
+                <CreateInviteLink
+                  role={role}
+                  setRole={setRole}
+                  email={email}
+                  setEmail={setEmail}
+                />
               </div>
               <SheetFooter className="flex flex-col h-full justify-between items-end">
                 <SheetClose>
                   <Button>Cancel</Button>
                 </SheetClose>
                 <SheetClose>
-                  <Button>Send Invite</Button>
+                  <Button onClick={() => sendInvite()}>Send Invite</Button>
                 </SheetClose>
               </SheetFooter>
             </SheetContent>

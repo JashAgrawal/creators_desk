@@ -1,4 +1,4 @@
-import  { initializeApp } from "firebase/app";
+import { initializeApp } from "firebase/app";
 import {
   createUserWithEmailAndPassword,
   getAuth,
@@ -8,8 +8,8 @@ import {
 import { GoogleAuthProvider } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 import { getFirestore } from "firebase/firestore";
+import { env } from "./env";
 
-const env = import.meta.env
 const firebaseConfig = {
   apiKey: env.VITE_FIREBASE_apiKey,
   authDomain: env.VITE_FIREBASE_authDomain,
@@ -26,15 +26,13 @@ export const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
 export const GoogleSignIn = async () => {
- 
-    const result = await signInWithPopup(auth, provider);
-    // const credential = GoogleAuthProvider.credentialFromResult(result);
-    // const token = credential?.accessToken;
-    const user = result.user;
-    return user;
-    // IdP data available using getAdditionalUserInfo(result)
-    // ...
-  
+  const result = await signInWithPopup(auth, provider);
+  // const credential = GoogleAuthProvider.credentialFromResult(result);
+  // const token = credential?.accessToken;
+  const user = result.user;
+  return user;
+  // IdP data available using getAdditionalUserInfo(result)
+  // ...
 };
 
 export const authenticateUser = async (
@@ -42,13 +40,11 @@ export const authenticateUser = async (
   password: string,
   isLogin: boolean
 ) => {
-  
-    const firebaseFn = isLogin
-      ? signInWithEmailAndPassword
-      : createUserWithEmailAndPassword;
-    const userCredentials = await firebaseFn(auth, email, password);
-    return userCredentials.user;
-  
+  const firebaseFn = isLogin
+    ? signInWithEmailAndPassword
+    : createUserWithEmailAndPassword;
+  const userCredentials = await firebaseFn(auth, email, password);
+  return userCredentials.user;
 };
 export const storage = getStorage();
 export const db = getFirestore();

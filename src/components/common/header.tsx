@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/navigation-menu";
 import { Link } from "react-router-dom";
 import { useExpanded } from "@/contexts/sidebar";
+import CustomAvatar from "./Avatar";
 
 const components: { title: string; href: string; description: string }[] = [
   {
@@ -58,42 +59,10 @@ export default function Header() {
   const { expanded } = useExpanded();
   return (
     <div
-      className="flex w-full border-b "
+      className="flex w-[95%] justify-between p-3 items-center border-b bg-indigo-500 bg-opacity-65 rounded-lg mt-2"
       style={{ marginLeft: expanded ? "13.3rem" : "3.6rem" }}
     >
-      <NavigationMenu>
-        <NavigationMenuList>
-          <NavigationMenuItem className="p-3">
-            <p>Home</p>
-          </NavigationMenuItem>
-        </NavigationMenuList>
-      </NavigationMenu>
+      <p>Logo</p>
     </div>
   );
 }
-
-const ListItem = React.forwardRef<
-  React.ElementRef<"a">,
-  React.ComponentPropsWithoutRef<"a">
->(({ className, title, children, ...props }, ref) => {
-  return (
-    <li>
-      <NavigationMenuLink asChild>
-        <a
-          ref={ref}
-          className={cn(
-            "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
-            className
-          )}
-          {...props}
-        >
-          <div className="text-sm font-medium leading-none">{title}</div>
-          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-            {children}
-          </p>
-        </a>
-      </NavigationMenuLink>
-    </li>
-  );
-});
-ListItem.displayName = "ListItem";
